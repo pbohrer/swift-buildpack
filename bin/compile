@@ -183,7 +183,7 @@ rm -rf $BUILD_DIR/.build
 # we are not taking advantage of the CACHE_DIR folder.
 status "Cleaning up cache folder"
 status "Cache folder has `ls $CACHE_DIR`"
-status "Cache folder size is `du -sk $CACHE_DIR/*`"
+status "Cache folder size is `du -sk $CACHE_DIR`"
 rm -rf $CACHE_DIR/*
 
 # Setup application environment
