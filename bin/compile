@@ -186,7 +186,10 @@ rm -rf $BUILD_DIR/.build
 status "Cleaning up cache folder"
 status "Cache folder has `ls $CACHE_DIR`"
 status "Cache folder size is `du -sk $CACHE_DIR`"
-#rm -rf $CACHE_DIR/*
+
+# It is faster to untar local swift binaries that copy them back and forth across network
+status "Cleaning up Swift binaries"
+rm -rf $SWIFT_INSTALL_DIR
 
 # Setup application environment
 PROFILE_PATH="$BUILD_DIR/.profile.d/swift.sh"
