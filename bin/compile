@@ -125,28 +125,29 @@ fi
 SWIFT_NAME_VERSION="swift-${SWIFT_VERSION}"
 CLANG_NAME_VERSION="clang-${CLANG_VERSION}"
 
-mkdir -p $CACHE_DIR
-cd $CACHE_DIR
+SWIFT_INSTALL_DIR="$BUILD_DIR/.heroku/swift"
+mkdir -p "$SWIFT_INSTALL_DIR"
+cd $SWIFT_INSTALL_DIR
 
 # Download and unpack Swift binaries
-if [[ ! -d "$CACHE_DIR/$SWIFT_NAME_VERSION" ]]; then
+if [[ ! -d "$SWIFT_INSTALL_DIR/$SWIFT_NAME_VERSION" ]]; then
   status "Installing Swift $SWIFT_VERSION"
   mkdir -p $SWIFT_NAME_VERSION
   dependency=$($compile_buildpack_dir/compile-extensions/bin/download_dependency $SWIFT_NAME_VERSION.tar.gz /tmp $DEFAULT_SWIFT_VERSION)
   echo "Downloaded Swift ($dependency)" | indent
   tar xz -C $SWIFT_NAME_VERSION -f $dependency
 fi
-SWIFT_PATH=$CACHE_DIR/$(echo $SWIFT_NAME_VERSION/swift*)
+SWIFT_PATH=$SWIFT_INSTALL_DIR/$(echo $SWIFT_NAME_VERSION/swift*)
 
 # Download and unpack clang
-if [[ ! -d "$CACHE_DIR/$CLANG_NAME_VERSION" ]]; then
+if [[ ! -d "$SWIFT_INSTALL_DIR/$CLANG_NAME_VERSION" ]]; then
   status "Installing Clang $CLANG_VERSION"
   mkdir -p $CLANG_NAME_VERSION
   dependency=$($compile_buildpack_dir/compile-extensions/bin/download_dependency $CLANG_NAME_VERSION.tar.xz /tmp)
   echo "Downloaded Clang ($dependency)" | indent
   echo $dependency | xz -d -c --files | tar x -C $CLANG_NAME_VERSION &> /dev/null
 fi
-CLANG_PATH=$CACHE_DIR/$(echo $CLANG_NAME_VERSION/clang*)
+CLANG_PATH=$SWIFT_INSTALL_DIR/$(echo $CLANG_NAME_VERSION/clang*)
 
 # Update PATH environment variable
 export PATH="$SWIFT_PATH/usr/bin:$CLANG_PATH/bin:$PATH"
