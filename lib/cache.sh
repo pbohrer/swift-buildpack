@@ -31,7 +31,7 @@ get_cache_status() {
     echo "disabled by config"
   elif [ "$(create_swift_signature)" != "$(load_swift_signature)" ]; then
     echo "new swift signature"
-  elif [ "$(create_package_signature)" != "$(load_package_signature)" ]; then
+  elif [ "$(create_packages_signature)" != "$(load_packages_signature)" ]; then
     echo "new package signature"
   else
     echo "valid"
