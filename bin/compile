@@ -27,12 +27,15 @@ if [[ "${BP_DEBUG}X" != "X" ]]; then
 fi
 
 # Variables
-BUILD_DIR=$1
-CACHE_DIR=$2
+BUILD_DIR=${1:-}
+CACHE_DIR=${2:-}
+
 DEFAULT_SWIFT_VERSION=3.0
 CLANG_VERSION=3.8.0
 compile_buildpack_dir=$(cd $(dirname $0); cd ..; pwd)
 compile_buildpack_bin=$compile_buildpack_dir/bin
+
+source ${compile_buildpack_dir}/lib/cache.sh
 
 echo "Build ($BUILD_DIR) Cache ($CACHE_DIR)"
 # Check environment support
@@ -115,6 +118,10 @@ export PKG_CONFIG_PATH="$BUILD_DIR/.apt/usr/lib/x86_64-linux-gnu/pkgconfig:$BUIL
 
 BUILDPACK_PATH=$compile_buildpack_dir source $compile_buildpack_dir/compile-extensions/lib/common
 
+#########################################
+#
+#	Setup and install Swift dev tools & libs
+#
 # Determine Swift version for the app
 if [ -f $BUILD_DIR/.swift-version ]; then
   # Take any pinned Swift version, stripping any redundant `swift-` prefix if present
@@ -162,6 +169,29 @@ else
   status "This buildpack does not add libdispatch binaries for $SWIFT_NAME_VERSION (note: Swift binaries from 8/23 and later already include libdispatch)"
 fi
 
+#########################################
+#
+#	Restore any cached state based on current state
+#
+DEFAULT_CACHE="Packages"
+
+restore_cache() {
+  local cache_status="$(get_cache_status)"
+
+  if [ "$cache_status" == "valid" ]; then
+	echo "Loading from cache:"
+	restore_cache_directories "$BUILD_DIR" "$CACHE_DIR" "$DEFAULT_CACHE"
+  else
+    echo "Skipping cache restore ($cache_status)"
+  fi
+}
+
+restore_cache
+
+#########################################
+#
+#	Build Packages
+#
 cd $BUILD_DIR
 status "Building Package..."
 #swift build --configuration release | indent
@@ -180,6 +210,38 @@ find $BUILD_DIR/.build/release -type f -perm /a+x -exec cp {} $BUILD_DIR/.swift-
 status "Cleaning up build files"
 rm -rf $BUILD_DIR/.build
 
+
+#########################################
+#
+#	Save Cache
+#
+cache_build() {
+  echo "Clearing previous node cache"
+  clear_cache
+
+  #
+  # TODO: need to add support to set this env variable
+  #
+  if ! ${SWIFT_PACKAGE_CACHE:-true}; then
+    echo "Skipping cache save (disabled by config)"
+  else
+    echo "Saving cache (default):"
+    save_cache_directories "$BUILD_DIR" "$CACHE_DIR" "$DEFAULT_CACHE"
+  fi
+
+  save_signatures
+}
+
+cache_build
+
+#########################################
+#
+#	Clean up unnecessary content
+#
+# It is faster to untar local swift binaries that copy them back and forth across network
+status "Cleaning up Swift binaries"
+rm -rf $SWIFT_INSTALL_DIR
+
 # Cleaning up the cache folder to speed up the upload to droplet step.
 # This has no impact on the execution of the buildpack since [at the moment]
 # we are not taking advantage of the CACHE_DIR folder.
@@ -187,11 +249,10 @@ status "Cleaning up cache folder"
 status "Cache folder has `ls $CACHE_DIR`"
 status "Cache folder size is `du -sk $CACHE_DIR`"
 
-# It is faster to untar local swift binaries that copy them back and forth across network
-status "Cleaning up Swift binaries"
-rm -rf $SWIFT_INSTALL_DIR
-
+#########################################
+#
 # Setup application environment
+#
 PROFILE_PATH="$BUILD_DIR/.profile.d/swift.sh"
 set-env PATH '$HOME/.swift-bin:$PATH'
 set-env LD_LIBRARY_PATH '$HOME/.swift-lib:$LIBRARY_PATH'
