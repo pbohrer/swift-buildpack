@@ -216,7 +216,7 @@ rm -rf $BUILD_DIR/.build
 #	Save Cache
 #
 cache_build() {
-  echo "Clearing previous node cache"
+  echo "Clearing previous swift cache"
   clear_cache
 
   #
