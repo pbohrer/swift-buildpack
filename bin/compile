@@ -240,8 +240,8 @@ cache_build
 #
 # It is faster to untar local swift binaries that copy them back and forth across network
 status "Cleaning up Swift binaries"
-#rm -rf $SWIFT_INSTALL_DIR
-rm -rf $compile_buildpack_dir/binary-dependencies/swift-DEVELOPMENT*
+rm -rf $SWIFT_INSTALL_DIR
+#rm -rf $compile_buildpack_dir/binary-dependencies/swift-DEVELOPMENT*
 
 # Cleaning up the cache folder to speed up the upload to droplet step.
 # This has no impact on the execution of the buildpack since [at the moment]
